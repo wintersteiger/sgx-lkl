@@ -24,6 +24,8 @@ function CleanTest()
 
 function RunOneTest()
 {
+    CheckNotRunning
+    
     # For non-ltp test can be run-hw or run-sw
     # For ltp test we always pass "run" which will run run-hw and run-sw but run-sw is disabled for LTP tests
     # We don't need to create separate test results for LTP, but will create separate test results for non-LTP
