@@ -24,6 +24,7 @@ case "$test_mode" in
            exit 1;
 	   ;;
 esac
+test_class="ltp"
 
 SGX_LKL_RUN_CMD="$SGXLKL_STARTER $run_flag sgxlkl-miniroot-fs.img"
 
