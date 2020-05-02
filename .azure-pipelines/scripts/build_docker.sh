@@ -15,7 +15,7 @@ fi
 
 # Initialize the variables.
 test_name="Compile and build via Docker"
-test_class="BVT"
+test_class="Build"
 test_suite="sgx-lkl-oe"
 error_message_file_path="report/$test_name.error"
 stack_trace_file_path="report/$test_name.stack"

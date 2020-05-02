@@ -64,9 +64,16 @@ jobs:
         build_mode: "$(build_mode)"
 
     - bash: .azure-pipelines/scripts/test_runner.sh $(test_suite)
-      displayName: Run Tests
+      displayName: Run Tests (hw)
       env:
         build_mode: "$(build_mode)"
+        run_mode: 'run-hw'
+        
+    - bash: .azure-pipelines/scripts/test_runner.sh $(test_suite)
+      displayName: Run Tests (sw)
+      env:
+        build_mode: "$(build_mode)"
+        run_mode: 'run-sw'
 
     - task: PublishTestResults@2
       displayName: "Publish Test Results *.xml"

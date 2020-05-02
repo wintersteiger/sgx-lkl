@@ -195,24 +195,9 @@ do
         continue
     fi
 
-    if [[ "$test_group_name" == "non-ltp" ]]; then
-        # Run non-ltp test with run-hw
-        GetReadyToRunNextTest
-        RunOneTest "run-hw"
-        ProcessOneTestResult
-
-        # Run non-ltp test with run-sw
-        GetReadyToRunNextTest
-        RunOneTest "run-sw"
-        ProcessOneTestResult
-    else 
-        # Run ltp tests (ltp-batch1 or ltp-batch2)
-        # We call with "run" which calls run-hw and run-sw
-        # but run-sw is disabled for LTP tests.
-        GetReadyToRunNextTest
-        RunOneTest "run"
-        ProcessOneTestResult
-    fi
+    GetReadyToRunNextTest
+    RunOneTest $run_mode
+    ProcessOneTestResult
 
     # run "make clean" for current test folder
     CleanTest
@@ -226,7 +211,7 @@ echo "total    = $total_tests"
 echo "=================================================="
 
 # Using suite test start time, create test duration junit xml which will be used for test duration in pipeline
-[[ "$test_group_name" == "non-ltp" ]] && CreateSuiteTestRunDurationJunit $suite_test_start_time "$test_suite" "${test_group_name}-${debug_mode}"
+[[ "$test_group_name" == "non-ltp" ]] && CreateSuiteTestRunDurationJunit $suite_test_start_time "$test_suite" "${test_group_name}-${build_mode}-${run_mode}"
 
 # Subtract disabled tests before comparing toltal_passed
 # Disabled tests not considered failure
