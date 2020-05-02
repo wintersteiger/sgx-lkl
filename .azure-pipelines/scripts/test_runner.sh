@@ -25,7 +25,7 @@ function CleanTest()
 function RunOneTest()
 {
     CheckNotRunning
-    
+
     # For non-ltp test can be run-hw or run-sw
     # For ltp test we always pass "run" which will run run-hw and run-sw but run-sw is disabled for LTP tests
     # We don't need to create separate test results for LTP, but will create separate test results for non-LTP
@@ -132,20 +132,12 @@ function SkipTestIfDisabled()
     # if this test is disabled set counters and skip to next test
     if [[ $is_test_disabled -ge 1 ]]; then
         echo "Test $file is disabled. Skipping test..."
-	echo "To enable the test remove $file from $disabled_tests_file"
+        echo "To enable the test remove $file from $disabled_tests_file"
 
-	if [[ "$test_group_name" == "non-ltp" ]]; then
-	    disabled_test_count=2 # run-hw and run-sw
-        else
-            # LTP tests ltp-batch1 or ltp-batch2
-            # Technically you can disable but this means no test will run
-            disabled_test_count=1
-	fi
-
-        total_disabled=$(($total_disabled + $disabled_test_count))
-	counter=$(($counter + $disabled_test_count))
+        total_disabled=$(($total_disabled + 1))
+        counter=$(($counter + 1))
         total_remaining=$(($total_tests - $counter))
-	skip_test=true
+        skip_test=true
     fi
 }
 
@@ -175,9 +167,6 @@ else
 fi
 
 total_tests=${#file_list[@]}
-# LTP tests run only with run-hw. For LTP case count will be 1
-# Non-LTP tests will run with run-hw and run-sw. We will create separate test cases for hw and sw; count will be double
-[[ "$test_group_name" == "non-ltp" ]] && total_tests=$((total_tests * 2))
 
 total_passed=0
 total_failed=0
