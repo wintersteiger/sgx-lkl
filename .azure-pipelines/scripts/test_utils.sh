@@ -25,7 +25,7 @@ function ChangeDirectory()
 
 function CheckNotRunning()
 {
-    if pregp -x sgx-lkl-run-oe >/dev/null; then
+    if pgrep -x sgx-lkl-run-oe >/dev/null; then
         echo "SGX-LKL still running:"
         ps -aux | grep sgx-lkl-run-oe
         exit 1
