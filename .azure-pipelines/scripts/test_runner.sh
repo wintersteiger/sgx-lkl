@@ -39,7 +39,7 @@ function RunOneTest()
     JunitTestStarted "$test_name"
 
     # Start the test. Redirect stdout to stdout_file and error logs to stderr_file
-    bash $test_runner_script $run_mode >"$stdout_file" 2>"$stderr_file"
+    bash $test_runner_script run $run_mode >"$stdout_file" 2>"$stderr_file"
     test_exit_code=$?
 }
 
