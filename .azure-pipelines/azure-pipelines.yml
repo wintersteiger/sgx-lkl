@@ -47,6 +47,12 @@ parameters:
       name: scaleset-nosgx
     hw:
       name: scaleset-sgx
+- name: 'apt_repo_blob_container'
+  type: string
+  default: 'apt-dev'
+  values:
+  - apt-dev
+  - apt # for releases
 
 stages:
 - stage: build_and_test
@@ -158,10 +164,6 @@ stages:
             pathtoPublish: "report"
             artifactName: logs
 
-# If you want to publish the .deb packages to the release APT repository,
-# then start the build with variable:
-# Name = PUBLISH_RELEASE
-# Value = 1
 - stage: publish
   displayName: Publish
   dependsOn: build_and_test
@@ -204,19 +206,6 @@ stages:
         SGXLKL_DEB_DIR: $(System.SourcesDirectory)/deb
         SGXLKL_APT_REPO_DIR: $(System.SourcesDirectory)/apt
 
-    - script: |
-        BLOB_CONTAINER=apt
-        PKG_FEED=deb-pkg
-        if [[ ${PUBLISH_RELEASE} != 1 ]]; then
-          BLOB_CONTAINER=${BLOB_CONTAINER}-dev
-          PKG_FEED=${PKG_FEED}-dev
-        fi
-        echo "BLOB_CONTAINER=$(BLOB_CONTAINER)"
-        echo "PKG_FEED=$(PKG_FEED)"
-        echo "##vso[task.setvariable variable=BLOB_CONTAINER]${BLOB_CONTAINER}"
-        echo "##vso[task.setvariable variable=PKG_FEED]${PKG_FEED}"
-      displayName: Set storage locations
-
     - task: AzureCLI@2
       displayName: Publish APT repository to Blob container
       inputs:
@@ -227,7 +216,7 @@ stages:
         scriptLocation: inlineScript
         inlineScript: |
           az storage blob upload-batch \
-            --account-name clcpackages -d $(BLOB_CONTAINER) \
+            --account-name clcpackages -d ${{ apt_repo_blob_container }} \
             --destination-path 1fa5fb889b8efa6ea07354c3b54903f7 \
             -s $(System.SourcesDirectory)/apt
           
