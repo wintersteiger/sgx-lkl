@@ -44,8 +44,7 @@ run-hw: $(ROOT_FS)
 	@${LTP_TEST_SCRIPT} run-hw
 
 run-sw: $(ROOT_FS)
-	@echo "LTP test for run-sw is disabled due to overhead in time"
-	#@${LTP_TEST_SCRIPT} run-sw
+	@${LTP_TEST_SCRIPT} run-sw
 
 clean:
 	@test -f $(ALPINE_TAR) && rm $(ALPINE_TAR) || true
