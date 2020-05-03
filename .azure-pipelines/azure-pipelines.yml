@@ -215,7 +215,7 @@ stages:
         scriptLocation: inlineScript
         inlineScript: |
           az storage blob upload-batch \
-            --account-name clcpackages -d ${{ apt_repo_blob_container }} \
+            --account-name clcpackages -d ${{ parameters.apt_repo_blob_container }} \
             --destination-path 1fa5fb889b8efa6ea07354c3b54903f7 \
             -s $(System.SourcesDirectory)/apt
           
