@@ -104,7 +104,7 @@ stages:
         - task: PublishBuildArtifacts@1
           displayName: Publish Debian package as build artifact
           inputs:
-            pathtoPublish: $(Build.SourcesDirectory)/build/deb
+            pathtoPublish: $(Build.SourcesDirectory)/build/deb/pkg
             artifactName: deb
 
     - ${{ each run_mode in parameters.run_modes }}:
