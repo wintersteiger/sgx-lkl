@@ -38,14 +38,14 @@ parameters:
 - name: 'run_modes'
   type: object
   default:
-  - run-hw
-  - run-sw
+  - hw
+  - sw
 - name: 'test_pool_mapping'
   type: object
   default:
-    run-sw:
+    sw:
       name: scaleset-nosgx
-    run-hw:
+    hw:
       name: scaleset-sgx
 
 stages:
@@ -138,7 +138,7 @@ stages:
           displayName: Run Tests
           env:
             build_mode: "${{ build_mode }}"
-            run_mode: "${{ run_mode }}"
+            run_mode: "run-${{ run_mode }}"
             SGXLKL_PREFIX: ${{ parameters.install_prefix_mapping[build_mode] }}
 
         - task: PublishTestResults@2
