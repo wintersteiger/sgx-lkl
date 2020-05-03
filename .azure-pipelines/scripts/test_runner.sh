@@ -26,9 +26,6 @@ function RunOneTest()
 {
     CheckNotRunning
 
-    # For non-ltp test can be run-hw or run-sw
-    # For ltp test we always pass "run" which will run run-hw and run-sw but run-sw is disabled for LTP tests
-    # We don't need to create separate test results for LTP, but will create separate test results for non-LTP
     run_mode=$1
 
     echo "[Test #$counter/$total_tests] Found $file in directory $test_directory"
@@ -158,9 +155,9 @@ if [[ $1 == "ltp1" ]]; then
 elif [[ $1 == "ltp2" ]]; then
     file_list=("tests/ltp/ltp-batch2/Makefile")
     test_group_name="ltp-batch2"
-elif [[ $1 == "non-ltp" ]]; then
+elif [[ $1 == "core" ]]; then
     file_list=( $(find $test_folder_name -name $test_folder_identifier | grep -v "$test_exception_list") )
-    test_group_name="non-ltp"
+    test_group_name="core"
 else
     echo "Unknown test suite: $1"
     exit 1
@@ -202,7 +199,7 @@ echo "total    = $total_tests"
 echo "=================================================="
 
 # Using suite test start time, create test duration junit xml which will be used for test duration in pipeline
-[[ "$test_group_name" == "non-ltp" ]] && CreateSuiteTestRunDurationJunit $suite_test_start_time "$test_suite" "${test_group_name}-${build_mode}-${run_mode}"
+[[ "$test_group_name" == "core" ]] && CreateSuiteTestRunDurationJunit $suite_test_start_time "$test_suite" "${test_group_name}-${build_mode}-${run_mode}"
 
 # Subtract disabled tests before comparing toltal_passed
 # Disabled tests not considered failure

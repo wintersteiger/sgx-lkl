@@ -28,18 +28,25 @@ parameters:
   type: object
   default:
   # Names must not have dashes as job names cannot have them.
+  # NOTE: When changing this list, also change install_prefix_mapping.
   - debug
   - nondebug
-- name: 'install_prefix_mapping'
-  type: object
-  default:
-    debug: /opt/sgx-lkl-debug
-    nondebug: /opt/sgx-lkl-nondebug
 - name: 'run_modes'
   type: object
   default:
   - hw
   - sw
+- name: 'test_suites'
+  type: object
+  default:
+  - core
+  - ltp1
+  - ltp2
+- name: 'install_prefix_mapping'
+  type: object
+  default:
+    debug: /opt/sgx-lkl-debug
+    nondebug: /opt/sgx-lkl-nondebug
 - name: 'test_pool_mapping'
   type: object
   default:
@@ -101,68 +108,60 @@ stages:
             artifactName: deb
 
     - ${{ each run_mode in parameters.run_modes }}:
-      - job: test_${{ build_mode }}_${{ run_mode }}
-        displayName: 'Test: ${{ build_mode }} ${{ run_mode }}'
+      - ${{ each test_suite in parameters.test_suites }}:
+        - job: test_${{ test_suite }}_${{ build_mode }}_${{ run_mode }}
+          displayName: 'Test: ${{ test_suite }} (${{ build_mode }} ${{ run_mode }})'
 
-        dependsOn: build_${{ build_mode }}
+          dependsOn: build_${{ build_mode }}
 
-        pool: ${{ parameters.test_pool_mapping[run_mode] }}
+          pool: ${{ parameters.test_pool_mapping[run_mode] }}
 
-        strategy:
-          matrix:
-            non-ltp:
-              test_suite: 'non-ltp'
-            ltp1:
-              test_suite: 'ltp1'
-            ltp2:
-              test_suite: 'ltp2'
+          steps:
+          - checkout: self
+            submodules: false
 
-        steps:
-        - checkout: self
-          submodules: false
+          - task: DownloadBuildArtifacts@0
+            displayName: Download Debian package
+            inputs:
+              downloadPath: $(System.SourcesDirectory)
+              downloadType: specific
+              itemPattern: 'deb/*'
 
-        - task: DownloadBuildArtifacts@0
-          displayName: Download Debian package
-          inputs:
-            downloadPath: $(System.SourcesDirectory)
-            downloadType: specific
-            itemPattern: 'deb/*'
+          - bash: .azure-pipelines/scripts/install_prerequisites.sh
+            displayName: Install pre-requisites
 
-        - bash: .azure-pipelines/scripts/install_prerequisites.sh
-          displayName: Install pre-requisites
+          - bash: .azure-pipelines/scripts/dump_system_info.sh
+            displayName: Dump system info
 
-        - bash: .azure-pipelines/scripts/dump_system_info.sh
-          displayName: Dump system info
+          - bash: .azure-pipelines/scripts/install_deb_pkg.sh
+            displayName: Install Debian package
+            env:
+              SGXLKL_DEB_DIR: $(System.SourcesDirectory)/deb
+              SGXLKL_BUILD_MODE: "$(build_mode)"
 
-        - bash: .azure-pipelines/scripts/install_deb_pkg.sh
-          displayName: Install Debian package
-          env:
-            SGXLKL_DEB_DIR: $(System.SourcesDirectory)/deb
-            SGXLKL_BUILD_MODE: "$(build_mode)"
+          - bash: .azure-pipelines/scripts/test_runner.sh ${{ test_suite }}
+            displayName: Run Tests
+            env:
+              build_mode: "${{ build_mode }}"
+              run_mode: "run-${{ run_mode }}"
+              SGXLKL_PREFIX: ${{ parameters.install_prefix_mapping[build_mode] }}
 
-        - bash: .azure-pipelines/scripts/test_runner.sh $(test_suite)
-          displayName: Run Tests
-          env:
-            build_mode: "${{ build_mode }}"
-            run_mode: "run-${{ run_mode }}"
-            SGXLKL_PREFIX: ${{ parameters.install_prefix_mapping[build_mode] }}
+          - task: PublishTestResults@2
+            displayName: "Publish Test Results *.xml"
+            condition: always()
+            inputs:
+              testResultsFormat: "JUnit"
+              testResultsFiles: "report/*-junit.xml"
+              testRunTitle: "${{ test_suite }} (${{ build_mode }} ${{ run_mode }})"
+              mergeTestResults: true
+              failTaskOnFailedTests: true
 
-        - task: PublishTestResults@2
-          displayName: "Publish Test Results *.xml"
-          condition: always()
-          inputs:
-            testResultsFormat: "JUnit"
-            testResultsFiles: "report/*-junit.xml"
-            testRunTitle: "$(test_suite) (${{ build_mode }} ${{ run_mode }})"
-            mergeTestResults: true
-            failTaskOnFailedTests: true
-
-        - task: PublishBuildArtifacts@1
-          displayName: "Archive Logs"
-          condition: always()
-          inputs:
-            pathtoPublish: "report"
-            artifactName: logs
+          - task: PublishBuildArtifacts@1
+            displayName: "Archive Logs"
+            condition: always()
+            inputs:
+              pathtoPublish: "report"
+              artifactName: logs
 
 - stage: publish
   displayName: Publish
