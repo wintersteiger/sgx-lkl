@@ -81,7 +81,7 @@ stages:
           displayName: Checkout Submodules
       
         - bash: .azure-pipelines/scripts/install_prerequisites.sh
-          displayName: Install pre-requisites
+          displayName: Install prerequisites
 
         - bash: .azure-pipelines/scripts/dump_system_info.sh
           displayName: Dump system info
@@ -128,7 +128,7 @@ stages:
               itemPattern: 'deb/*'
 
           - bash: .azure-pipelines/scripts/install_prerequisites.sh
-            displayName: Install pre-requisites
+            displayName: Install prerequisites
 
           - bash: .azure-pipelines/scripts/dump_system_info.sh
             displayName: Dump system info
@@ -182,7 +182,7 @@ stages:
       submodules: false
 
     - bash: .azure-pipelines/scripts/install_prerequisites.sh
-      displayName: Install pre-requisites
+      displayName: Install prerequisites
 
     - bash: .azure-pipelines/scripts/dump_system_info.sh
       displayName: Dump system info
