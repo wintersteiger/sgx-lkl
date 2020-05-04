@@ -42,7 +42,8 @@ run-hw: $(CC_stamp)
 		--hw-debug
 
 run-sw: $(CC_stamp)
-	docker run --rm --privileged \
+	# TODO -t as work-around for https://github.com/lsds/sgx-lkl/issues/158
+	docker run --rm --privileged -t \
 		${SGXLKL_ENV} \
 		-v $(SGXLKL_PREFIX):$(SGXLKL_PREFIX) \
 		$(CC) \
