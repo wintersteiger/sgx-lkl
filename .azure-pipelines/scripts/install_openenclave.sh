@@ -37,7 +37,8 @@ sudo ansible-playbook scripts/ansible/oe-contributors-acc-setup-no-driver.yml
 mkdir -p build
 cd build
 cmake -G "Ninja" ..
-sudo cmake --build . --target install
+sudo ninja
+sudo ninja install
 if [[ "$?" == "0" ]]; then
     git log --pretty=%H | head -1 > $openenclave_status_file_path
 fi
