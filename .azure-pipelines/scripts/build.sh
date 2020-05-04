@@ -37,26 +37,13 @@ make clean
 make $make_args && make install $make_install_args
 make_exit=$?
 
-# Set up host networking and FSGSBASE userspace support
-if [[ "$make_exit" == "0" ]]; then
-    $SGXLKL_ROOT/tools/sgx-lkl-setup
-    setup_exit=$?
-fi
-
 # Process the result
-if [[ "$make_exit" == "0" ]] && [[ "$setup_exit" == "0" ]] && [[ -f build/sgx-lkl-run-oe ]] && [[ -f build/libsgxlkl.so.signed ]] && [[ -f build/libsgxlkl.so ]]; then
+if [[ "$make_exit" == "0" ]] && [[ -f build/sgx-lkl-run-oe ]] && [[ -f build/libsgxlkl.so.signed ]] && [[ -f build/libsgxlkl.so ]]; then
     JunitTestFinished "$test_name" "passed" "$test_class" "$test_suite"
 else
     echo "'$test_name' exited with $make_exit" > "$error_message_file_path"
     make $make_args > "$stack_trace_file_path"  2>&1
-    if [[ "$make_exit" == "0" ]]; then
-        $SGXLKL_ROOT/tools/sgx-lkl-setup >> "$stack_trace_file_path"  2>&1
-    fi
     JunitTestFinished "$test_name" "failed" "$test_class" "$test_suite"
 fi
 
-if [[ "$make_exit" == "0" ]]; then
-    exit $setup_exit
-else
-    exit $make_exit
-fi
+exit $make_exit

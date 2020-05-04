@@ -138,6 +138,9 @@ stages:
             env:
               SGXLKL_DEB_DIR: $(System.SourcesDirectory)/deb
               SGXLKL_BUILD_MODE: "${{ build_mode }}"
+          
+          - bash: .azure-pipelines/scripts/run_setup.sh
+            displayName: Run sgx-lkl-setup
 
           - bash: .azure-pipelines/scripts/test_runner.sh ${{ test_suite }}
             displayName: Run Tests
