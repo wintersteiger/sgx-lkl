@@ -5,7 +5,6 @@ if [ -z $SGXLKL_ROOT ]; then
     exit 1
 fi
 
-. /opt/openenclave/share/openenclave/openenclaverc
 . $SGXLKL_ROOT/.azure-pipelines/scripts/junit_utils.sh
 . $SGXLKL_ROOT/.azure-pipelines/scripts/test_utils.sh
 
