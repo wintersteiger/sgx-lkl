@@ -147,6 +147,7 @@ stages:
             displayName: Run Tests
             env:
               build_mode: "${{ build_mode }}"
+              SGXLKL_BUILD_MODE: "${{ build_mode }}"
               run_mode: "run-${{ run_mode }}"
               SGXLKL_PREFIX: ${{ parameters.install_prefix_mapping[build_mode] }}
 
