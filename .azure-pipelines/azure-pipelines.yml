@@ -119,6 +119,7 @@ stages:
           steps:
           - checkout: self
             submodules: false
+            clean: true
 
           - task: DownloadBuildArtifacts@0
             displayName: Download Debian package
