@@ -11,6 +11,7 @@
 #include <unistd.h>
 
 #include "shared/bitops.h"
+#include "shared/sgxlkl_enclave_config.h"
 
 #include "enclave/enclave_mem.h"
 #include "enclave/enclave_util.h"
