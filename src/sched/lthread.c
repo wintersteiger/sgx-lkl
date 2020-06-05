@@ -47,8 +47,8 @@
 #include "enclave/lthread_int.h"
 #include "enclave/sgxlkl_t.h"
 #include "enclave/ticketlock.h"
-#include "shared/tree.h"
 #include "openenclave/corelibc/oemalloc.h"
+#include "shared/tree.h"
 
 extern int vio_enclave_wakeup_event_channel(void);
 
@@ -359,8 +359,9 @@ void _lthread_free(struct lthread* lt)
         lt->robust_list.head = *rp;
         int cont = a_swap(&m->_m_lock, lt->tid | 0x40000000);
         lt->robust_list.pending = 0;
-        if (cont < 0 || waiters) {
-            enclave_futex((int*)&m->_m_lock, FUTEX_WAKE|priv, 1, 0, 0, 0);
+        if (cont < 0 || waiters)
+        {
+            enclave_futex((int*)&m->_m_lock, FUTEX_WAKE | priv, 1, 0, 0, 0);
         }
     }
     __do_orphaned_stdio_locks(lt);
@@ -424,7 +425,7 @@ void set_tls_tp(struct lthread* lt)
 
     tp->schedctx = __scheduler_self();
 
-    if (sgxlkl_enclave->mode != SW_DEBUG_MODE)
+    if (!sgxlkl_in_sw_debug_mode())
     {
         __asm__ volatile("wrfsbase %0" ::"r"(tp));
     }
@@ -433,7 +434,7 @@ void set_tls_tp(struct lthread* lt)
         int r = __set_thread_area(TP_ADJ(tp));
         if (r < 0)
         {
-            sgxlkl_fail( "Could not set thread area %p\n", tp);
+            sgxlkl_fail("Could not set thread area %p\n", tp);
         }
     }
 }
@@ -448,7 +449,7 @@ void reset_tls_tp(struct lthread* lt)
     // The scheduler context is at a fixed offset from its ethread's fsbase.
     char* tp = (char*)sp - SCHEDCTX_OFFSET;
 
-    if (sgxlkl_enclave->mode != SW_DEBUG_MODE)
+    if (!sgxlkl_in_sw_debug_mode())
     {
         __asm__ volatile("wrfsbase %0" ::"r"(tp));
     }
@@ -457,7 +458,7 @@ void reset_tls_tp(struct lthread* lt)
         int r = __set_thread_area(TP_ADJ(tp));
         if (r < 0)
         {
-            sgxlkl_fail( "Could not set thread area %p: %s\n", tp);
+            sgxlkl_fail("Could not set thread area %p: %s\n", tp);
         }
     }
 }
@@ -634,7 +635,11 @@ int lthread_create_primitive(
     lt->robust_list.head = &lt->robust_list.head;
 
     static unsigned long long n = 0;
-    snprintf(lt->funcname, 64, "cloned host task %llu", __atomic_fetch_add(&n, 1, __ATOMIC_SEQ_CST));
+    snprintf(
+        lt->funcname,
+        64,
+        "cloned host task %llu",
+        __atomic_fetch_add(&n, 1, __ATOMIC_SEQ_CST));
 
     if (new_lt)
     {
@@ -951,7 +956,7 @@ int lthread_setcancelstate(int new, int* old)
  * accessed.  `lthread_current()` is always safe to use here as is any lthread
  * that has not yet been scheduled.
  */
-static struct lthread_tls* lthread_findtlsslot(struct lthread *lt, long key)
+static struct lthread_tls* lthread_findtlsslot(struct lthread* lt, long key)
 {
     struct lthread_tls *d, *d_tmp;
     LIST_FOREACH_SAFE(d, &lt->tls, tls_next, d_tmp)
