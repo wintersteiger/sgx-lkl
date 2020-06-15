@@ -1175,9 +1175,9 @@ static void* lkl_termination_thread(void* args)
 
     SGXLKL_VERBOSE("termination thread unblocked\n");
 
-    /* Expose exit status based on app_config */
-    const sgxlkl_app_config_t* app_config = &sgxlkl_enclave->app_config;
-    switch (app_config->exit_status)
+    /* Expose exit status based on enclave config */
+    const sgxlkl_enclave_config_t* cfg = sgxlkl_enclave;
+    switch (cfg->exit_status)
     {
         case EXIT_STATUS_FULL:
             /* do nothing */
@@ -1222,7 +1222,7 @@ static void* lkl_termination_thread(void* args)
         if (!sgxlkl_enclave_state.disk_state[i].mounted)
             continue;
 
-        sgxlkl_enclave_disk_config_t* disk_i = &app_config->disks[i];
+        sgxlkl_enclave_disk_config_t* disk_i = &cfg->disks[i];
         SGXLKL_VERBOSE("calling lkl_umount_timeout(%s)\n", disk_i->mnt);
         res = lkl_umount_timeout(disk_i->mnt, 0, UMOUNT_DISK_TIMEOUT);
         if (res < 0)
@@ -1342,8 +1342,7 @@ void lkl_start_init()
     register_lkl_syscall_overrides();
 
     sgxlkl_shared_memory_t* shm = &sgxlkl_enclave_state.shared_memory;
-    const sgxlkl_enclave_config_t* config = sgxlkl_enclave_state.config;
-    const sgxlkl_app_config_t* app_config = &config->app_config;
+    const sgxlkl_enclave_config_t* cfg = sgxlkl_enclave_state.config;
 
     // Provide LKL host ops and virtio block device ops
     lkl_host_ops = sgxlkl_host_ops;
@@ -1436,17 +1435,17 @@ void lkl_start_init()
     const char* lkl_cmdline = bootargs;
     SGXLKL_VERBOSE("kernel command line: \'%s\'\n", lkl_cmdline);
 
-    size_t num_disks = app_config->num_disks;
+    size_t num_disks = cfg->num_disks;
     for (i = 0; i < num_disks; ++i)
     {
         SGXLKL_VERBOSE(
             "Disk %zu: Disk encryption: %s\n",
             i,
-            (is_encrypted(&app_config->disks[i]) ? "ON" : "off"));
+            (is_encrypted(&cfg->disks[i]) ? "ON" : "off"));
         SGXLKL_VERBOSE(
             "Disk %zu: Disk is writable: %s\n",
             i,
-            (!app_config->disks[i].readonly ? "YES" : "no"));
+            (!cfg->disks[i].readonly ? "YES" : "no"));
     }
 
     /* Setup bounce buffer for virtio */
