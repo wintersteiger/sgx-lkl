@@ -6,10 +6,6 @@
 
 #define OE_STDERR_FILENO 1
 
-// sgxlkl_verbose is used only by the tracing macros.
-// Should move into sgxlkl_enclave_state?
-int sgxlkl_verbose = 1;
-
 void sgxlkl_fail(char* msg, ...)
 {
     va_list(args);
