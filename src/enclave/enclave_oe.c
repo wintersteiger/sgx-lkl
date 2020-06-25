@@ -1,9 +1,10 @@
 #include <enclave/oe_compat.h>
 
-#include <string.h>
-
-#include "pthread_impl.h"
-
+#define OE_BUILD_ENCLAVE
+#include <openenclave/attestation/attester.h>
+#include <openenclave/attestation/sgx/eeid_attester.h>
+#include <openenclave/attestation/sgx/eeid_plugin.h>
+#include <openenclave/attestation/verifier.h>
 #include <openenclave/bits/eeid.h>
 #include <openenclave/internal/globals.h>
 
@@ -128,6 +129,76 @@ static void prepare_elf_stack()
     // CHECK: should the memory holding the strings also be on the stack?
 }
 
+// Header file for this doesn't get installed. Should OE initialize the
+// verifier plugin automatically, when it receives a verification request?
+oe_result_t oe_sgx_eeid_verifier_initialize(void);
+
+static void _get_attestation_evidence()
+{
+    static const oe_uuid_t format_id = {OE_FORMAT_UUID_SGX_EEID_ECDSA_P256};
+
+    oe_sgx_eeid_attester_initialize();
+    oe_sgx_eeid_verifier_initialize();
+
+    size_t evidence_buffer_size = 0;
+    uint8_t* evidence_buffer = NULL;
+    size_t endorsements_buffer_size = 0;
+    uint8_t* endorsements_buffer = NULL;
+
+    oe_result_t result = oe_get_evidence(
+        &format_id,
+        NULL,
+        0,
+        NULL,
+        0,
+        &evidence_buffer,
+        &evidence_buffer_size,
+        &endorsements_buffer,
+        &endorsements_buffer_size);
+
+    if (result != OE_OK)
+        sgxlkl_fail("Failed to retrieve attestation evidence: %d.\n", result);
+    else
+        sgxlkl_info("Successfully obtained attestation evidence\n");
+
+    oe_sgx_eeid_attester_shutdown();
+
+    // Note: Since we're using the feature/sgx-lkl-support branch, we can
+    // only verify quotes created from that branch.
+    // oe_claim_t* claims = NULL;
+    // size_t claims_size = 0;
+
+    // result = oe_verify_evidence(
+    //     evidence_buffer,
+    //     evidence_buffer_size,
+    //     NULL,
+    //     0,
+    //     NULL,
+    //     0,
+    //     &claims,
+    //     &claims_size);
+
+    // if (result != OE_OK)
+    //     sgxlkl_warn("Failed to verify attestation evidence\n");
+    // else
+    // {
+    //     sgxlkl_info("Successfully verified attestation evidence\n");
+
+    //     for (size_t i = 0; i < claims_size; i++)
+    //     {
+    //         size_t n = claims[i].value_size;
+    //         char vs[2 * n + 1];
+    //         bytes_to_hex(vs, sizeof(vs), claims[i].value, n);
+    //         sgxlkl_info(
+    //             "Attestation claim #%d: %s=%s\n", i, claims[i].name, vs);
+    //     }
+    // }
+
+    oe_free_evidence(evidence_buffer);
+    oe_free_endorsements(endorsements_buffer);
+    // oe_free_claims(claims, claims_size);
+}
+
 // We need to have a separate function here
 int __sgx_init_enclave()
 {
@@ -230,6 +301,9 @@ int sgxlkl_enclave_init(const sgxlkl_shared_memory_t* shared_memory)
 #ifdef DEBUG
     sgxlkl_enclave_state.verbose = 0;
 #endif
+
+    if (true)
+        _get_attestation_evidence();
 
     if (_read_eeid_config())
         return 1;
