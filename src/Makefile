@@ -17,6 +17,7 @@ CFLAGS_MAIN += -DOE_WITH_EXPERIMENTAL_EEID -I$(srcdir)/libjson/include -I$(LIB_S
 #      cannot use -nostdinc currently as stdatomic.h is included which is missing
 CFLAGS_ENCLAVE = -I$(OE_SDK_INCLUDES) -I${OE_SDK_INCLUDES}/openenclave/3rdparty -fPIE -DSGXLKL_ENCLAVE
 CFLAGS_ENCLAVE += -DOE_WITH_EXPERIMENTAL_EEID -I$(srcdir)/libjson/include -I$(LIB_SGXLKL_BUILD)/config
+CFLAGS_ENCLAVE += -I${BFD} -I${BFD}/../include
 LINK_MAIN =
 
 SGXLKL_VERSION = "$(shell cat ${SGXLKL_ROOT}/VERSION)"

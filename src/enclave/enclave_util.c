@@ -1,9 +1,12 @@
 #include "enclave/enclave_util.h"
 #include "enclave/lthread.h"
 
+#include <link.h>
+
 #include <stdarg.h>
 
 #include "openenclave/corelibc/oemalloc.h"
+#include "openenclave/corelibc/oestring.h"
 #include "openenclave/internal/print.h"
 #ifdef DEBUG
 #include "openenclave/internal/backtrace.h"
@@ -76,6 +79,130 @@ void* oe_calloc_or_die(size_t nmemb, size_t size, const char* fail_msg, ...)
 }
 
 #ifdef DEBUG
+
+#include <config.h>
+
+#include <bfd.h>
+
+typedef struct
+{
+    void* address;
+    const char* file;
+    ElfW(Addr) base;
+} match_t;
+
+static int dl_iterate_phdr_cb(
+    struct dl_phdr_info* info,
+    size_t size,
+    void* data)
+{
+    match_t* match = (match_t*)data;
+
+    for (size_t i = 0; i < info->dlpi_phnum; i++)
+    {
+        const ElfW(Phdr)* phdr = &info->dlpi_phdr[i];
+
+        if (phdr->p_type == PT_LOAD)
+        {
+            ElfW(Addr) vaddr = phdr->p_vaddr + info->dlpi_addr;
+            ElfW(Addr) maddr = (ElfW(Addr))match->address;
+            if ((maddr >= vaddr) && (maddr < vaddr + phdr->p_memsz))
+            {
+                match->file = info->dlpi_name;
+                match->base = info->dlpi_addr;
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
+static char** process_file(const char* fileName, bfd_vma* addr, int naddr)
+{
+    bfd* abfd = bfd_openr(fileName, NULL);
+    if (!abfd)
+    {
+        printf("Error opening bfd file \"%s\"\n", fileName);
+        return NULL;
+    }
+
+    if (bfd_check_format(abfd, bfd_archive))
+    {
+        printf("Cannot get addresses from archive \"%s\"\n", fileName);
+        bfd_close(abfd);
+        return NULL;
+    }
+
+    char** matching;
+    if (!bfd_check_format_matches(abfd, bfd_object, &matching))
+    {
+        printf("Format does not match for archive \"%s\"\n", fileName);
+        bfd_close(abfd);
+        return NULL;
+    }
+
+    // asymbol** syms = kstSlurpSymtab(abfd, fileName);
+    // if (!syms)
+    // {
+    //     printf("Failed to read symbol table for archive \"%s\"\n", fileName);
+    //     bfd_close(abfd);
+    //     return NULL;
+    // }
+
+    // char** retBuf = translateAddressesBuf(abfd, addr, naddr, syms);
+
+    // oe_free(syms);
+
+    bfd_close(abfd);
+    // return retBuf;
+    return NULL;
+}
+
+static char** backtrace_symbols(void* const* addrList, int numAddr)
+{
+    char*** locations = (char***)malloc(sizeof(char**) * numAddr);
+
+    // initialize the bfd library
+    bfd_init();
+
+    int total = 0;
+    size_t idx = numAddr;
+    for (size_t i = 0; i < numAddr; i++)
+    {
+        match_t match;
+        dl_iterate_phdr(&dl_iterate_phdr_cb, &match);
+
+        // adjust the address in the global space of your binary to an
+        // offset in the relevant library
+        bfd_vma addr = (bfd_vma)(addrList[idx]);
+        addr -= (bfd_vma)(match.base);
+
+        // lookup the symbol
+        if (match.file && oe_strlen(match.file))
+            locations[idx] = process_file(match.file, &addr, 1);
+        else
+            locations[idx] = process_file("/proc/self/exe", &addr, 1);
+
+        total += oe_strlen(locations[idx][0]) + 1;
+    }
+
+    // return all the file and line information for each address
+    char** final = (char**)oe_malloc(total + (numAddr * sizeof(char*)));
+    char* f_strings = (char*)(final + numAddr);
+
+    for (size_t i = 0; i < numAddr; i++)
+    {
+        // oe_strcpy(f_strings, locations[i][0]);
+        oe_free(locations[i]);
+        final[i] = f_strings;
+        f_strings += oe_strlen(f_strings) + 1;
+    }
+
+    oe_free(locations);
+
+    return final;
+}
+
 /**
  * Provide access to an internal OE function. We cannot use the public
  * oe_backtrace function because we need to pass in custom frame pointers of
@@ -89,6 +216,8 @@ void sgxlkl_print_backtrace(void** start_frame)
     size_t size;
     char** strings;
     size_t i;
+
+    backtrace_symbols(NULL, 0);
 
     size = oe_backtrace_impl(
         start_frame == NULL ? __builtin_frame_address(0) : start_frame,

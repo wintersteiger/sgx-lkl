@@ -152,3 +152,7 @@ OE_LIBS := enclave/liboecore.a \
            enclave/libmbedcrypto.a \
            enclave/liboesyscall.a \
            host/liboehost.a
+
+BFD = ${SGXLKL_ROOT}/third_party/binutils-gdb/bfd
+THIRD_PARTY_LIB_BFD = ${BFD}/libbfd.a
+THIRD_PARTY_LIB_IBERTY = ${BFD}/../libiberty/libiberty.a
