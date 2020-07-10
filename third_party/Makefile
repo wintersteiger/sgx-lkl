@@ -4,7 +4,7 @@ ARCH ?= x86_64
 
 .PHONY: clean distclean
 .INTERMEDIATE: ${MAKE_ROOT}/cryptsetup.tar.gz ${MAKE_ROOT}/devicemapper.tar.gz ${MAKE_ROOT}/e2fsprogs.tar.gz ${MAKE_ROOT}/util-linux.tar.gz ${MAKE_ROOT}/popt.tar.gz ${MAKE_ROOT}/json-c.tar.gz ${MAKE_ROOT}/wireguard.tar.gz\
-               ${CRYPTSETUP} ${DEVICEMAPPER} ${UTILLINUX} ${POPT} ${JSONC} ${BFD} ${WIREGUARD}
+               ${CRYPTSETUP} ${DEVICEMAPPER} ${UTILLINUX} ${POPT} ${JSONC} ${WIREGUARD}
 
 default: all
 
@@ -48,9 +48,6 @@ ${JSONC}:
 	wget --retry-connrefused -O "${MAKE_ROOT}/json-c.tar.gz" 'https://github.com/json-c/json-c/archive/json-c-0.13.1-20180305.tar.gz'
 	mkdir -p $@ && tar -C $@ --strip 1 -xf ${MAKE_ROOT}/json-c.tar.gz
 	rm ${MAKE_ROOT}/json-c.tar.gz
-
-${BFD}:
-	git clone git://sourceware.org/git/binutils-gdb.git
 
 ${WIREGUARD}:
 	wget --retry-connrefused -O "${MAKE_ROOT}/wireguard.tar.gz" 'https://download.wireguard.com/monolithic-historical/WireGuard-0.0.20191219.tar.xz'
@@ -99,14 +96,6 @@ ${THIRD_PARTY_LIB_JSON}: ${JSONC} ${CRYPTSETUP_BUILD}
 	cd ${JSONC}; [ -f Makefile ] || CC=${HOST_CC} CFLAGS="${THIRD_PARTY_CFLAGS}" ./configure \
 		--prefix=${CRYPTSETUP_BUILD}/ --enable-static
 	+CC=${HOST_CC} CFLAGS=-fPIC ${MAKE} -C ${JSONC} all install
-
-${THIRD_PARTY_LIB_BFD}: ${BFD}
-	cd ${BFD}; [ -f Makefile ] || CC=${HOST_CC} CFLAGS="${THIRD_PARTY_CFLAGS}" ./configure
-	+CC=${HOST_CC} CFLAGS=-fPIC ${MAKE} -C ${BFD} bfdver.h targmatch.h elf64-target.h elf32-target.h libbfd.a
-	cd ${BFD}/../libiberty; [ -f Makefile ] || CC=${HOST_CC} CFLAGS="${THIRD_PARTY_CFLAGS}" ./configure ac_cv_have_decl_getopt=false
-	+CC=${HOST_CC} CFLAGS=-fPIC ${MAKE} -C ${BFD}/../libiberty libiberty.a
-	cd ${BFD}/../zlib; [ -f Makefile ] || CC=${HOST_CC} CFLAGS="${THIRD_PARTY_CFLAGS}" ./configure
-	+CC=${HOST_CC} CFLAGS=-fPIC ${MAKE} -C ${BFD}/../zlib libz.a
 
 ${THIRD_PARTY_LIB_CRYPTSETUP}: ${CRYPTSETUP} ${THIRD_PARTY_LIB_POPT} ${THIRD_PARTY_LIB_DEVICE_MAPPER} ${THIRD_PARTY_LIB_UUID} ${THIRD_PARTY_LIB_JSON} ${CRYPTSETUP_BUILD}
 	cd ${CRYPTSETUP}; [ -f Makefile ] || CC=${HOST_CC} CFLAGS="${THIRD_PARTY_CFLAGS} -I${CRYPTSETUP_BUILD}/include -I${LKL_BUILD}/include" LDFLAGS="-L${CRYPTSETUP_BUILD}/lib" ./autogen.sh

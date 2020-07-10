@@ -17,7 +17,6 @@ CFLAGS_MAIN += -DOE_WITH_EXPERIMENTAL_EEID -I$(srcdir)/libjson/include -I$(LIB_S
 #      cannot use -nostdinc currently as stdatomic.h is included which is missing
 CFLAGS_ENCLAVE = -I$(OE_SDK_INCLUDES) -I${OE_SDK_INCLUDES}/openenclave/3rdparty -fPIE -DSGXLKL_ENCLAVE
 CFLAGS_ENCLAVE += -DOE_WITH_EXPERIMENTAL_EEID -I$(srcdir)/libjson/include -I$(LIB_SGXLKL_BUILD)/config
-CFLAGS_ENCLAVE += -I${BFD} -I${BFD}/../include
 LINK_MAIN =
 
 SGXLKL_VERSION = "$(shell cat ${SGXLKL_ROOT}/VERSION)"
@@ -135,7 +134,7 @@ $(LIB_SGXLKL_BUILD)/$(SGXLKL_RUN_TARGET): $(LIB_SGXLKL_BUILD)/main-oe/main-oe.a 
 	@echo "CC $<"
 	@$(CC) $(CFLAGS_MAIN) -o $@ $(LIB_SGXLKL_BUILD)/main-oe/main-oe.a -ljson-c -lcrypto $(LINK_MAIN) \
 	-pthread -ldl -lrt -lz -lm -Wl,-T $(sgxlkl_scriptsdir)/sgx-lkl.ld -L$(OE_SDK_LIBS)/openenclave/host -rdynamic \
-	-Wl,-z,noexecstack -loehost -ldl -lsgx_enclave_common -lsgx_urts -lssl -lcrypto $(DCAP_LIB)
+	-Wl,-z,noexecstack -loehost -ldl -lsgx_enclave_common -lsgx_urts -lssl -lcrypto $(DCAP_LIB) -lbfd
 
 $(LIB_SGXLKL_BUILD)/main-oe/main-oe.a: $(MAIN_OE_OBJS) builddirs
 	@echo "AR rc $@"

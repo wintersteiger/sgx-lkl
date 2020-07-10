@@ -75,6 +75,11 @@ enclave {
 
         // Host call to broadcast the shutdown notification from guest
         void sgxlkl_host_shutdown_notification(void);
+
+        // Host call to resolve addresses to file/line number
+        char** sgxlkl_backtrace_symbols(
+          [user_check] void** addresses,
+          size_t num_addresses);
    };
 
 };
