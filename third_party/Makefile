@@ -101,11 +101,12 @@ ${THIRD_PARTY_LIB_JSON}: ${JSONC} ${CRYPTSETUP_BUILD}
 	+CC=${HOST_CC} CFLAGS=-fPIC ${MAKE} -C ${JSONC} all install
 
 ${THIRD_PARTY_LIB_BFD}: ${BFD}
-	# cd ${BFD}; [ -f Makefile ] || CC=${HOST_CC} CFLAGS="${THIRD_PARTY_CFLAGS}" ./autogen.sh && autoreconf -i
 	cd ${BFD}; [ -f Makefile ] || CC=${HOST_CC} CFLAGS="${THIRD_PARTY_CFLAGS}" ./configure
 	+CC=${HOST_CC} CFLAGS=-fPIC ${MAKE} -C ${BFD} bfdver.h targmatch.h elf64-target.h elf32-target.h libbfd.a
-	cd ${BFD}/../libiberty; [ -f Makefile ] || CC=${HOST_CC} CFLAGS="${THIRD_PARTY_CFLAGS}" ./configure
+	cd ${BFD}/../libiberty; [ -f Makefile ] || CC=${HOST_CC} CFLAGS="${THIRD_PARTY_CFLAGS}" ./configure ac_cv_have_decl_getopt=false
 	+CC=${HOST_CC} CFLAGS=-fPIC ${MAKE} -C ${BFD}/../libiberty libiberty.a
+	cd ${BFD}/../zlib; [ -f Makefile ] || CC=${HOST_CC} CFLAGS="${THIRD_PARTY_CFLAGS}" ./configure
+	+CC=${HOST_CC} CFLAGS=-fPIC ${MAKE} -C ${BFD}/../zlib libz.a
 
 ${THIRD_PARTY_LIB_CRYPTSETUP}: ${CRYPTSETUP} ${THIRD_PARTY_LIB_POPT} ${THIRD_PARTY_LIB_DEVICE_MAPPER} ${THIRD_PARTY_LIB_UUID} ${THIRD_PARTY_LIB_JSON} ${CRYPTSETUP_BUILD}
 	cd ${CRYPTSETUP}; [ -f Makefile ] || CC=${HOST_CC} CFLAGS="${THIRD_PARTY_CFLAGS} -I${CRYPTSETUP_BUILD}/include -I${LKL_BUILD}/include" LDFLAGS="-L${CRYPTSETUP_BUILD}/lib" ./autogen.sh

@@ -158,44 +158,42 @@ static char** process_file(const char* fileName, bfd_vma* addr, int naddr)
     return NULL;
 }
 
-static char** backtrace_symbols(void* const* addrList, int numAddr)
+static char** backtrace_symbols(void* const* addresses, size_t num_addresses)
 {
-    char*** locations = (char***)malloc(sizeof(char**) * numAddr);
-
-    // initialize the bfd library
     bfd_init();
 
-    int total = 0;
-    size_t idx = numAddr;
-    for (size_t i = 0; i < numAddr; i++)
+    char*** locations = (char***)malloc(sizeof(char**) * num_addresses);
+    int num_string_bytes = 0;
+    for (size_t i = 0; i < num_addresses; i++)
     {
-        match_t match;
+        match_t match = {0};
         dl_iterate_phdr(&dl_iterate_phdr_cb, &match);
 
         // adjust the address in the global space of your binary to an
         // offset in the relevant library
-        bfd_vma addr = (bfd_vma)(addrList[idx]);
+        bfd_vma addr = (bfd_vma)(addresses[i]);
         addr -= (bfd_vma)(match.base);
 
         // lookup the symbol
         if (match.file && oe_strlen(match.file))
-            locations[idx] = process_file(match.file, &addr, 1);
+            locations[i] = process_file(match.file, &addr, 1);
         else
-            locations[idx] = process_file("/proc/self/exe", &addr, 1);
+            locations[i] = process_file("/proc/self/exe", &addr, 1);
 
-        total += oe_strlen(locations[idx][0]) + 1;
+        num_string_bytes += oe_strlen(locations[i][0]) + 1;
     }
 
-    // return all the file and line information for each address
-    char** final = (char**)oe_malloc(total + (numAddr * sizeof(char*)));
-    char* f_strings = (char*)(final + numAddr);
+    char** final =
+        (char**)oe_malloc(num_string_bytes + (num_addresses * sizeof(char*)));
+    char* f_strings = (char*)(final + num_addresses);
 
-    for (size_t i = 0; i < numAddr; i++)
+    for (size_t i = 0; i < num_addresses; i++)
     {
-        // oe_strcpy(f_strings, locations[i][0]);
+        size_t len = oe_strlen(locations[i][0]);
+        memcpy(f_strings, locations[i][0], len + 1);
         oe_free(locations[i]);
         final[i] = f_strings;
-        f_strings += oe_strlen(f_strings) + 1;
+        f_strings += len + 1;
     }
 
     oe_free(locations);
@@ -217,13 +215,13 @@ void sgxlkl_print_backtrace(void** start_frame)
     char** strings;
     size_t i;
 
-    backtrace_symbols(NULL, 0);
-
     size = oe_backtrace_impl(
         start_frame == NULL ? __builtin_frame_address(0) : start_frame,
         buf,
         sizeof(buf));
     strings = oe_backtrace_symbols(buf, size);
+
+    strings = backtrace_symbols(buf, size);
 
     for (i = 0; i < size; i++)
         sgxlkl_info("    #%ld: %p in %s(...)\n", i, buf[i], strings[i]);

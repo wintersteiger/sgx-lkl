@@ -156,3 +156,4 @@ OE_LIBS := enclave/liboecore.a \
 BFD = ${SGXLKL_ROOT}/third_party/binutils-gdb/bfd
 THIRD_PARTY_LIB_BFD = ${BFD}/libbfd.a
 THIRD_PARTY_LIB_IBERTY = ${BFD}/../libiberty/libiberty.a
+THIRD_PARTY_LIB_Z = ${BFD}/../zlib/libz.a

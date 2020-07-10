@@ -46,8 +46,8 @@
 #include "enclave/lthread_int.h"
 #include "enclave/sgxlkl_t.h"
 #include "enclave/ticketlock.h"
-#include "shared/tree.h"
 #include "openenclave/corelibc/oemalloc.h"
+#include "shared/tree.h"
 
 #include "openenclave/corelibc/oemalloc.h"
 #include "openenclave/corelibc/oestring.h"
@@ -173,10 +173,10 @@ void __schedqueue_inc()
     a_inc(&schedqueuelen);
 }
 
-void lthread_sched_global_init(
-    size_t sleepspins_,
-    size_t sleeptime_ns_)
+void lthread_sched_global_init(size_t sleepspins_, size_t sleeptime_ns_)
 {
+    sgxlkl_print_backtrace(NULL);
+
     sleepspins = sleepspins_;
     sleeptime_ns = sleeptime_ns_;
     futex_wake_spins = DEFAULT_FUTEX_WAKE_SPINS;
@@ -361,8 +361,9 @@ void _lthread_free(struct lthread* lt)
         lt->robust_list.head = *rp;
         int cont = a_swap(&m->_m_lock, lt->tid | 0x40000000);
         lt->robust_list.pending = 0;
-        if (cont < 0 || waiters) {
-            enclave_futex((int*)&m->_m_lock, FUTEX_WAKE|priv, 1, 0, 0, 0);
+        if (cont < 0 || waiters)
+        {
+            enclave_futex((int*)&m->_m_lock, FUTEX_WAKE | priv, 1, 0, 0, 0);
         }
     }
     __do_orphaned_stdio_locks(lt);
@@ -958,7 +959,7 @@ int lthread_setcancelstate(int new, int* old)
  * accessed.  `lthread_current()` is always safe to use here as is any lthread
  * that has not yet been scheduled.
  */
-static struct lthread_tls* lthread_findtlsslot(struct lthread *lt, long key)
+static struct lthread_tls* lthread_findtlsslot(struct lthread* lt, long key)
 {
     struct lthread_tls *d, *d_tmp;
     LIST_FOREACH_SAFE(d, &lt->tls, tls_next, d_tmp)
@@ -1092,7 +1093,8 @@ void lthread_dump_all_threads(void)
 {
     struct lthread_queue* lt_queue = __active_lthreads;
 
-    sgxlkl_info("=============================================================\n");
+    sgxlkl_info(
+        "=============================================================\n");
     sgxlkl_info("Stack traces for all lthreads:\n");
 
     for (int i = 1; lt_queue; i++)
@@ -1101,13 +1103,21 @@ void lthread_dump_all_threads(void)
         SGXLKL_ASSERT(lt);
         int tid = lt->tid;
         char* funcname = lt->funcname;
-        sgxlkl_info("-------------------------------------------------------------\n");
-        sgxlkl_info("%s%i: tid=%i [%s]\n", lt == lthread_self() ? "*" : "", i, tid, funcname);
-        sgxlkl_print_backtrace(lt == lthread_self() ? __builtin_frame_address(0) : lt->ctx.ebp);
+        sgxlkl_info(
+            "-------------------------------------------------------------\n");
+        sgxlkl_info(
+            "%s%i: tid=%i [%s]\n",
+            lt == lthread_self() ? "*" : "",
+            i,
+            tid,
+            funcname);
+        sgxlkl_print_backtrace(
+            lt == lthread_self() ? __builtin_frame_address(0) : lt->ctx.ebp);
 
         lt_queue = lt_queue->next;
     }
 
-    sgxlkl_info("=============================================================\n");
+    sgxlkl_info(
+        "=============================================================\n");
 }
 #endif
